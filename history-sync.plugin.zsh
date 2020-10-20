@@ -70,16 +70,15 @@ function history_sync_pull() {
     fi
 
     # Decrypt
-    "$GPG" --output "$ZSH_HISTORY_FILE_DECRYPT_NAME" --decrypt "$ZSH_HISTORY_FILE_ENC"
-    if [[ "$?" != 0 ]]; then
-        _print_gpg_decrypt_error_msg
-        cd "$DIR"
-        return
-    fi
+#    "$GPG" --output "$ZSH_HISTORY_FILE_DECRYPT_NAME" --decrypt "$ZSH_HISTORY_FILE_ENC"
+#    if [[ "$?" != 0 ]]; then
+#        _print_gpg_decrypt_error_msg
+#        cd "$DIR"
+#        return
+#    fi
 
     # Merge
-    cat "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_FILE_DECRYPT_NAME" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE"
-    rm  "$ZSH_HISTORY_FILE_DECRYPT_NAME"
+    cat "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_PROJ" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE"
     cd  "$DIR"
 }
 
@@ -104,69 +103,61 @@ function history_sync_push() {
     done
 
     # Encrypt
-    if ! [[ "${#recipients[@]}" > 0 ]]; then
-        echo -n "Please enter GPG recipient name: "
-        read name
-        recipients+="$name"
-    fi
+#    if ! [[ "${#recipients[@]}" > 0 ]]; then
+#        echo -n "Please enter GPG recipient name: "
+#        read name
+#        recipients+="$name"
+#    fi
 
     ENCRYPT_CMD="$GPG --yes -v "
-    for r in "${recipients[@]}"; do
-        ENCRYPT_CMD+="-r \"$r\" "
-    done
+#    for r in "${recipients[@]}"; do
+#        ENCRYPT_CMD+="-r \"$r\" "
+#    done
 
-    if [[ "$ENCRYPT_CMD" =~ '.(-r).+.' ]]; then
-        ENCRYPT_CMD+="--encrypt --sign --armor --output $ZSH_HISTORY_FILE_ENC $ZSH_HISTORY_FILE"
-        eval "$ENCRYPT_CMD"
-        if [[ "$?" != 0 ]]; then
-            _print_gpg_encrypt_error_msg
-            return
-        fi
 
-        # Commit
-        if [[ $force = false ]]; then
-            echo -n "$bold_color${fg[yellow]}Do you want to commit current local history file (y/N)?$reset_color "
-            read commit
-        else
-            commit='y'
-        fi
+    # Commit
+    if [[ $force = false ]]; then
+        echo -n "$bold_color${fg[yellow]}Do you want to commit current local history file (y/N)?$reset_color "
+        read commit
+    else
+        commit='y'
+    fi
 
-        if [[ -n "$commit" ]]; then
-            case "$commit" in
-                [Yy]* )
-                    DIR=$(pwd)
-                    cd "$ZSH_HISTORY_PROJ" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
+    if [[ -n "$commit" ]]; then
+        case "$commit" in
+            [Yy]* )
+                DIR=$(pwd)
+                cd "$ZSH_HISTORY_PROJ" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
 
-                    if [[ $force = false ]]; then
-                        echo -n "$bold_color${fg[yellow]}Do you want to push to remote (y/N)?$reset_color "
-                        read push
-                    else
-                        push='y'
-                    fi
+                if [[ $force = false ]]; then
+                    echo -n "$bold_color${fg[yellow]}Do you want to push to remote (y/N)?$reset_color "
+                    read push
+                else
+                    push='y'
+                fi
 
-                    if [[ -n "$push" ]]; then
-                        case "$push" in
-                            [Yy]* )
-                                "$GIT" push
-                                if [[ "$?" != 0 ]]; then
-                                    _print_git_error_msg
-                                    cd "$DIR"
-                                    return
-                                fi
+                if [[ -n "$push" ]]; then
+                    case "$push" in
+                        [Yy]* )
+                            "$GIT" push
+                            if [[ "$?" != 0 ]]; then
+                                _print_git_error_msg
                                 cd "$DIR"
-                                ;;
-                        esac
-                    fi
+                                return
+                            fi
+                            cd "$DIR"
+                            ;;
+                    esac
+                fi
 
-                    if [[ "$?" != 0 ]]; then
-                        _print_git_error_msg
-                        cd "$DIR"
-                        return
-                    fi
-                    ;;
-                * )
-                    ;;
-            esac
-        fi
+                if [[ "$?" != 0 ]]; then
+                    _print_git_error_msg
+                    cd "$DIR"
+                    return
+                fi
+                ;;
+            * )
+                ;;
+        esac
     fi
 }
