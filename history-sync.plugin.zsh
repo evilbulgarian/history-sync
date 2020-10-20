@@ -24,7 +24,7 @@ GPG=$(which gpg)
 ZSH_HISTORY_REPO="${HOME}/repo/history.ares"
 ZSH_HISTORY_FILE_NAME=".zsh_history"
 ZSH_HISTORY_FILE="${HOME}/${ZSH_HISTORY_FILE_NAME}"
-ZSH_HISTORY_REPO_FILE_NAME="${ZSH_HISTORY_REPO}/vladi_zsh_history"
+ZSH_HISTORY_REPO_FILE_NAME="${ZSH_HISTORY_REPO}/${ZSH_HISTORY_FILE_NAME}"
 GIT_COMMIT_MSG="latest $(date)"
 
 function _print_git_error_msg() {
@@ -57,7 +57,7 @@ function history_sync_pull() {
     DIR=$(pwd)
 
     # Backup
-    cp -av "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_FILE.backup" 1>&2
+    ~/bin/bak $ZSH_HISTORY_FILE 1>&2
 
     # Pull
     cd "$ZSH_HISTORY_REPO" && "$GIT" pull
@@ -104,6 +104,7 @@ function history_sync_push() {
         case "$commit" in
             [Yy]* )
                 DIR=$(pwd)
+                cp "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_FILE_NAME"
                 cd "$ZSH_HISTORY_REPO" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
 
                 if [[ $force = false ]]; then
