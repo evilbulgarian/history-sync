@@ -19,12 +19,11 @@ alias zhps=history_sync_push
 alias zhsync="history_sync_pull && history_sync_push"
 
 GIT=$(which git)
-GPG=$(which gpg)
 
 ZSH_HISTORY_REPO="${HOME}/repo/history.ares"
-ZSH_HISTORY_FILE_NAME=".zsh_history"
-ZSH_HISTORY_FILE="${HOME}/${ZSH_HISTORY_FILE_NAME}"
-ZSH_HISTORY_REPO_FILE_NAME="${ZSH_HISTORY_REPO}/${ZSH_HISTORY_FILE_NAME}"
+ZSH_HISTORY_NAME=".zsh_history"
+ZSH_HISTORY_FILE_PATH="${HOME}/${ZSH_HISTORY_NAME}"
+ZSH_HISTORY_REPO_FILE_PATH="${ZSH_HISTORY_REPO}/${ZSH_HISTORY_NAME}"
 GIT_COMMIT_MSG="latest $(date)"
 
 function _print_git_error_msg() {
@@ -57,7 +56,7 @@ function history_sync_pull() {
     DIR=$(pwd)
 
     # Backup
-    ~/bin/bak $ZSH_HISTORY_FILE 1>&2
+    ~/bin/bak $ZSH_HISTORY_FILE_PATH 1>&2
 
     # Pull
     cd "$ZSH_HISTORY_REPO" && "$GIT" pull
@@ -68,7 +67,7 @@ function history_sync_pull() {
     fi
 
     # Merge
-    cat "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_REPO_FILE_NAME" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE"
+    cat "$ZSH_HISTORY_FILE_PATH" "$ZSH_HISTORY_REPO_FILE_PATH" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE_PATH"
     cd  "$DIR"
 }
 
@@ -92,6 +91,8 @@ function history_sync_push() {
         esac
     done
 
+    cp $ZSH_HISTORY_FILE_PATH $ZSH_HISTORY_NAME
+
     # Commit
     if [[ $force = false ]]; then
         echo -n "$bold_color${fg[yellow]}Do you want to commit current local history file (y/N)?$reset_color "
@@ -104,7 +105,6 @@ function history_sync_push() {
         case "$commit" in
             [Yy]* )
                 DIR=$(pwd)
-                cp "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_FILE_NAME"
                 cd "$ZSH_HISTORY_REPO" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
 
                 if [[ $force = false ]]; then
