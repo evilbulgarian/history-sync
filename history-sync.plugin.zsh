@@ -91,7 +91,7 @@ function history_sync_push() {
         esac
     done
 
-    cp $ZSH_HISTORY_FILE_PATH $ZSH_HISTORY_NAME
+    cp $ZSH_HISTORY_FILE_PATH $ZSH_HISTORY_REPO_FILE_PATH
 
     # Commit
     if [[ $force = false ]]; then
