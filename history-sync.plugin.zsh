@@ -21,16 +21,14 @@ alias zhsync="history_sync_pull && history_sync_push"
 GIT=$(which git)
 GPG=$(which gpg)
 
-ZSH_HISTORY_PROJ="${HOME}/.zsh_history_proj"
+ZSH_HISTORY_REPO="${HOME}/repo/history.ares"
 ZSH_HISTORY_FILE_NAME=".zsh_history"
 ZSH_HISTORY_FILE="${HOME}/${ZSH_HISTORY_FILE_NAME}"
-ZSH_HISTORY_FILE_ENC_NAME="zsh_history"
-ZSH_HISTORY_FILE_ENC="${ZSH_HISTORY_PROJ}/${ZSH_HISTORY_FILE_ENC_NAME}"
-ZSH_HISTORY_FILE_DECRYPT_NAME="zsh_history_decrypted"
+ZSH_HISTORY_REPO_FILE_NAME="${ZSH_HISTORY_REPO}/vladi_zsh_history"
 GIT_COMMIT_MSG="latest $(date)"
 
 function _print_git_error_msg() {
-    echo "$bold_color${fg[red]}There's a problem with git repository: ${ZSH_HISTORY_PROJ}.$reset_color"
+    echo "$bold_color${fg[red]}There's a problem with git repository: ${ZSH_HISTORY_REPO}.$reset_color"
     return
 }
 
@@ -62,23 +60,15 @@ function history_sync_pull() {
     cp -av "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_FILE.backup" 1>&2
 
     # Pull
-    cd "$ZSH_HISTORY_PROJ" && "$GIT" pull
+    cd "$ZSH_HISTORY_REPO" && "$GIT" pull
     if [[ "$?" != 0 ]]; then
         _print_git_error_msg
         cd "$DIR"
         return
     fi
 
-    # Decrypt
-#    "$GPG" --output "$ZSH_HISTORY_FILE_DECRYPT_NAME" --decrypt "$ZSH_HISTORY_FILE_ENC"
-#    if [[ "$?" != 0 ]]; then
-#        _print_gpg_decrypt_error_msg
-#        cd "$DIR"
-#        return
-#    fi
-
     # Merge
-    cat "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_PROJ" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE"
+    cat "$ZSH_HISTORY_FILE" "$ZSH_HISTORY_REPO_FILE_NAME" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE"
     cd  "$DIR"
 }
 
@@ -102,19 +92,6 @@ function history_sync_push() {
         esac
     done
 
-    # Encrypt
-#    if ! [[ "${#recipients[@]}" > 0 ]]; then
-#        echo -n "Please enter GPG recipient name: "
-#        read name
-#        recipients+="$name"
-#    fi
-
-    ENCRYPT_CMD="$GPG --yes -v "
-#    for r in "${recipients[@]}"; do
-#        ENCRYPT_CMD+="-r \"$r\" "
-#    done
-
-
     # Commit
     if [[ $force = false ]]; then
         echo -n "$bold_color${fg[yellow]}Do you want to commit current local history file (y/N)?$reset_color "
@@ -127,7 +104,7 @@ function history_sync_push() {
         case "$commit" in
             [Yy]* )
                 DIR=$(pwd)
-                cd "$ZSH_HISTORY_PROJ" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
+                cd "$ZSH_HISTORY_REPO" && "$GIT" add * && "$GIT" commit -m "$GIT_COMMIT_MSG"
 
                 if [[ $force = false ]]; then
                     echo -n "$bold_color${fg[yellow]}Do you want to push to remote (y/N)?$reset_color "
