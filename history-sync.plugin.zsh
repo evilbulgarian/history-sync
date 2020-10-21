@@ -67,7 +67,7 @@ function history_sync_pull() {
     fi
 
     # Merge
-    cat "$ZSH_HISTORY_FILE_PATH" "$ZSH_HISTORY_REPO_FILE_PATH" | awk '/:[0-9]/ { if(s) { print s } s=$0 } !/:[0-9]/ { s=s"\n"$0 } END { print s }' | LC_ALL=C sort -u > "$ZSH_HISTORY_FILE_PATH"
+    cat "$ZSH_HISTORY_FILE_PATH" "$ZSH_HISTORY_REPO_FILE_PATH" | awk -v date="WILL_NOT_APPEAR$(date +"%s")" '{if (sub(/\\$/,date)) printf "%s", $0; else print $0}' | LC_ALL=C sort -u | awk -v date="WILL_NOT_APPEAR$(date +"%s")" '{gsub('date',"\\\n"); print $0}' > "$ZSH_HISTORY_FILE_PATH"
     cd  "$DIR"
 }
 
